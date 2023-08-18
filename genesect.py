@@ -12,36 +12,37 @@ from random import random, randint, sample, uniform
 settings = {}
 
 # Configurações de evolução
-settings['pop_size'] = 50       # number of organisms
-settings['food_num'] = 100      # number of food particles
-settings['gens'] = 50           # number of generations
-settings['elitism'] = 0.20      # elitism (selection bias)
-settings['mutate'] = 0.10       # mutation rate
+settings['pop_size'] = 50       # número de organismos
+settings['food_amo'] = 100      # número de particulas de comida
+settings['gens'] = 50           # número de gerações
+settings['elitism'] = 0.20      # elitismo (selection bias)
+settings['mutate'] = 0.10       # taxa de mutação
 
 # Configurações de simulação
-settings['gen_time'] = 100      # generation length         (seconds)
-settings['dt'] = 0.04           # simulation time step      (dt)
-settings['dr_max'] = 720        # max rotational speed      (degrees per second)
-settings['v_max'] = 0.5         # max velocity              (units per second)
-settings['dv_max'] =  0.25      # max acceleration (+/-)    (units per second^2)
+settings['gen_time'] = 100      # tamanho da geração (segundos)
+settings['dt'] = 0.04           # passos de tempo da simulação (delta time (quantidade de tempo entre calculos dentro da simulação))
+settings['dr_max'] = 720        # velocidade máxima de rotação (graus por segundo)
+settings['v_max'] = 0.5         # velocidade máxima (unidades por segundo)
+settings['dv_max'] =  0.25      # aceleração máxima (+/-) (unidades por segundo^2)
 
-settings['x_min'] = -2.0        # arena western border
-settings['x_max'] =  2.0        # arena eastern border
-settings['y_min'] = -2.0        # arena southern border
-settings['y_max'] =  2.0        # arena northern border
+# Configurações da arena -> todas as medidas são partem de um ponto central expandindo para os determinados lados
+settings['x_min'] = -2.0        # borda oeste
+settings['x_max'] =  2.0        # borda leste
+settings['y_min'] = -2.0        # borda sul
+settings['y_max'] =  2.0        # borda norte
 
 settings['plot'] = False        # plot final generation?
 
 # Configuração de rede neural de organismos
-settings['inodes'] = 1          # number of input nodes
-settings['hnodes'] = 5          # number of hidden nodes
-settings['onodes'] = 2          # number of output nodes
+settings['inodes'] = 1          # número de nós de entrada
+settings['hnodes'] = 5          # número de nós ocultos
+settings['onodes'] = 2          # número de nós de saída
 
 
 #--- Classes ---#
 
 class food():
-    def __init__(self, settings):
+    def __init__(self, settings): # A função uniforme pegará um número aleatório entre o máximo X/Y e o minimo X/Y para o alimento ser inserido
         self.x = uniform(settings['x_min'], settings['x_max'])
         self.y = uniform(settings['y_min'], settings['y_max'])
         self.energy = 1
@@ -53,19 +54,19 @@ class food():
         self.energy = 1
 
 
-class organism():
+class organism(): # Classe que armazenará todas as informações dos indivíduos
     def __init__(self, settings, wih=None, who=None, name=None):
 
-        self.x = uniform(settings['x_min'], settings['x_max'])  # position (x)
-        self.y = uniform(settings['y_min'], settings['y_max'])  # position (y)
+        self.x = uniform(settings['x_min'], settings['x_max'])  # Posição (x)
+        self.y = uniform(settings['y_min'], settings['y_max'])  # Posição (y)
 
-        self.r = uniform(0,360)                 # orientation   [0, 360]
-        self.v = uniform(0,settings['v_max'])   # velocity      [0, v_max]
-        self.dv = uniform(-settings['dv_max'], settings['dv_max'])   # dv
+        self.r = uniform(0,360)                 # Orientação [0, 360] -> Direção que irá seguir
+        self.v = uniform(0,settings['v_max'])   # Velocidade [0, v_max] -> Entre 0 e o máximo permitido
+        self.dv = uniform(-settings['dv_max'], settings['dv_max']) # Aceleração 
 
-        self.d_food = 100   # distance to nearest food
-        self.r_food = 0     # orientation to nearest food
-        self.fitness = 0    # fitness (food count)
+        self.d_food = 100   # Distancia do alimento mais perto
+        self.r_food = 0     # Direção para a comida mais próxima
+        self.fitness = 0    # Fitness (contador de quanto se alimentou)
 
         self.wih = wih
         self.who = who
@@ -77,29 +78,29 @@ class organism():
     def think(self):
 
         # SIMPLE MLP
-        af = lambda x: np.tanh(x)               # activation function
-        h1 = af(np.dot(self.wih, self.r_food))  # hidden layer
-        out = af(np.dot(self.who, h1))          # output layer
+        af = lambda x: np.tanh(x)               # Função de ativação
+        h1 = af(np.dot(self.wih, self.r_food))  # Camada oculta
+        out = af(np.dot(self.who, h1))          # Camada de saída
 
         # UPDATE dv AND dr WITH MLP RESPONSE
-        self.nn_dv = float(out[0])   # [-1, 1]  (accelerate=1, deaccelerate=-1)
-        self.nn_dr = float(out[1])   # [-1, 1]  (left=1, right=-1)
+        self.nn_dv = float(out[0])   # [-1, 1]  (acelerar = 1, desacelerar = -1)
+        self.nn_dr = float(out[1])   # [-1, 1]  (esquerda = 1, direita = -1)
 
 
-    # UPDATE HEADING
+    # UPDATE direção
     def update_r(self, settings):
         self.r += self.nn_dr * settings['dr_max'] * settings['dt']
         self.r = self.r % 360
 
 
-    # UPDATE VELOCITY
+    # UPDATE velocidade
     def update_vel(self, settings):
         self.v += self.nn_dv * settings['dv_max'] * settings['dt']
         if self.v < 0: self.v = 0
         if self.v > settings['v_max']: self.v = settings['v_max']
 
 
-    # UPDATE POSITION
+    # UPDATE posição
     def update_pos(self, settings):
         dx = self.v * cos(radians(self.r)) * settings['dt']
         dy = self.v * sin(radians(self.r)) * settings['dt']
@@ -111,18 +112,19 @@ class organism():
 #--- Funções ---#
 
 def dist(x1,y1,x2,y2):
-    return sqrt((x2-x1)**2 + (y2-y1)**2)
+    return sqrt((x2-x1)**2 + (y2-y1)**2) # Retorne a raiz quadrada da conta para entregar a posição na arena
 
 
-def calc_heading(org, food):
+def calc_heading(org, food): # Calcular distância entre o organismo e o alimento
     d_x = food.x - org.x
     d_y = food.y - org.y
-    theta_d = degrees(atan2(d_y, d_x)) - org.r
-    if abs(theta_d) > 180: theta_d += 360
+    theta_d = degrees(atan2(d_y, d_x)) - org.r #  Calcula a diferença entre o ângulo do alimento e o ângulo em que o indivíduo se dirige.
+    if abs(theta_d) > 180: theta_d += 360 # Recalibra o ângulo desejado
     return theta_d / 180
 
 
 def plot_frame(settings, organisms, foods, gen, time):
+    # Criação da figura e seus pontos
     fig, ax = plt.subplots()
     fig.set_size_inches(9.6, 5.4)
 
@@ -137,7 +139,7 @@ def plot_frame(settings, organisms, foods, gen, time):
     for food in foods:
         drive_food(food.x, food.y, ax)
 
-    # MISC PLOT SETTINGS
+    # Configura a figura
     ax.set_aspect('equal')
     frame = plt.gca()
     frame.axes.get_xaxis().set_ticks([])
@@ -146,6 +148,7 @@ def plot_frame(settings, organisms, foods, gen, time):
     plt.figtext(0.025, 0.95,r'GENERATION: '+str(gen))
     plt.figtext(0.025, 0.90,r'T_STEP: '+str(time))
 
+    # Salva a figura
     plt.savefig(str(gen)+'-'+str(time)+'.png', dpi=100)
 ##    plt.show()
 
@@ -276,7 +279,7 @@ def run(settings):
 
     #--- POPULATE THE ENVIRONMENT WITH FOOD ---------------+
     foods = []
-    for i in range(0,settings['food_num']):
+    for i in range(0,settings['food_amo']):
         foods.append(food(settings))
 
     #--- POPULATE THE ENVIRONMENT WITH ORGANISMS ----------+
