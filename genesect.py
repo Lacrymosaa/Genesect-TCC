@@ -68,17 +68,17 @@ class organism(): # Classe que armazenará todas as informações dos indivíduo
         self.r_food = 0     # Direção para a comida mais próxima
         self.fitness = 0    # Fitness (contador de quanto se alimentou)
 
-        self.wih = wih
-        self.who = who
+        self.wih = wih # Pesos da camada oculta da rede neural
+        self.who = who # Pesos da camada de saída da rede neural
 
-        self.name = name
+        self.name = name # Nome, ele merece!
 
 
     # Rede neural
-    def think(self):
+    def think(self): # Calcula as saídas de rede neural com base na entrada, nesse caso sendo a distância do alimento mais próximo
 
         # SIMPLE MLP
-        af = lambda x: np.tanh(x)               # Função de ativação
+        af = lambda x: np.tanh(x)               # Função de ativação -> Calcula a tangente hiperbólica de X
         h1 = af(np.dot(self.wih, self.r_food))  # Camada oculta
         out = af(np.dot(self.who, h1))          # Camada de saída
 
@@ -88,15 +88,15 @@ class organism(): # Classe que armazenará todas as informações dos indivíduo
 
 
     # UPDATE direção
-    def update_r(self, settings):
-        self.r += self.nn_dr * settings['dr_max'] * settings['dt']
-        self.r = self.r % 360
+    def update_r(self, settings): # Atualiza a orientação com base nas respostas de nn_dr 
+        self.r += self.nn_dr * settings['dr_max'] * settings['dt'] # Multiplica valor da resposta da rede pela a configuração de distância máxima e pelo intervalo de tempo
+        self.r = self.r % 360 # Ajusta o resultaod para estar dentro do intervalo em graus
 
 
     # UPDATE velocidade
-    def update_vel(self, settings):
-        self.v += self.nn_dv * settings['dv_max'] * settings['dt']
-        if self.v < 0: self.v = 0
+    def update_vel(self, settings): # Atualiza a velocidade com base nas respostas de nn_dv
+        self.v += self.nn_dv * settings['dv_max'] * settings['dt'] # Multiplica valor da resposta da rede pelas configurações de velocidade máxima e pelo intervalo de tempo 
+        if self.v < 0: self.v = 0 # Limita o resultado para que ele não seja menor que zero e nem maior que o máximo
         if self.v > settings['v_max']: self.v = settings['v_max']
 
 
