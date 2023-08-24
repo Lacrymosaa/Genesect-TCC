@@ -1,0 +1,2 @@
+self.wih = wih # Pesos da camada oculta da rede neural
+self.who = who # Pesos da camada de saída da rede neural
