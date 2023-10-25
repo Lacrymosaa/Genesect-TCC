@@ -8,18 +8,20 @@ import numpy as np
 import operator
 from math import atan2, cos, degrees, floor,radians, sin, sqrt
 from random import random, randint, sample, uniform
+import cv2
+import io
 
 settings = {}
 
 # Configurações de evolução
 settings['pop_size'] = 50       # número de organismos
 settings['food_amo'] = 100      # número de particulas de comida
-settings['gens'] = 50           # número de gerações
+settings['gens'] = 50         # número de gerações
 settings['elitism'] = 0.20      # elitismo (selection bias)
 settings['mutate'] = 0.10       # taxa de mutação
 
 # Configurações de simulação
-settings['gen_time'] = 100      # tamanho da geração (segundos)
+settings['gen_time'] = 20      # tamanho da geração (segundos)
 settings['dt'] = 0.04           # passos de tempo da simulação (delta time (quantidade de tempo entre calculos dentro da simulação))
 settings['dr_max'] = 720        # velocidade máxima de rotação (graus por segundo)
 settings['v_max'] = 0.5         # velocidade máxima (unidades por segundo)
@@ -31,13 +33,12 @@ settings['x_max'] =  2.0        # borda leste
 settings['y_min'] = -2.0        # borda sul
 settings['y_max'] =  2.0        # borda norte
 
-settings['plot'] = False        # plot final generation?
+settings['plot'] = True        # plot final generation?
 
 # Configuração de rede neural de organismos
 settings['inodes'] = 1          # número de nós de entrada
 settings['hnodes'] = 5          # número de nós ocultos
 settings['onodes'] = 2          # número de nós de saída
-
 
 #--- Classes ---#
 
@@ -122,7 +123,7 @@ def calc_heading(org, food): # Calcular distância entre o organismo e o aliment
     return theta_d / 180
 
 
-def plot_frame(settings, organisms, foods, gen, time):
+def plot_frame(settings, organisms, foods, gen, time, video_out):
     # Criação da figura e seus pontos
     fig, ax = plt.subplots()
     fig.set_size_inches(9.6, 5.4)
@@ -147,12 +148,18 @@ def plot_frame(settings, organisms, foods, gen, time):
     plt.figtext(0.025, 0.95,r'GENERATION: '+str(gen))
     plt.figtext(0.025, 0.90,r'T_STEP: '+str(time))
 
-    # Salva a figura
-    plt.savefig(str(gen)+'-'+str(time)+'.png', dpi=100)
-##    plt.show()
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    frame = cv2.imdecode(np.frombuffer(buf.read(), np.uint8), 1)
+    buf.close()
+
+    video_out.write(frame) 
+
+    plt.close()
 
 
-def simulate(settings, organisms, foods, gen):
+def simulate(settings, organisms, foods, gen, video_out):
 
     total_time_steps = int(settings['gen_time'] / settings['dt'])
 
@@ -160,8 +167,9 @@ def simulate(settings, organisms, foods, gen):
     for t_step in range(0, total_time_steps, 1):
 
         # PLOT SIMULATION FRAME
-        if settings['plot']==True and gen==settings['gens']-1:
-            plot_frame(settings, organisms, foods, gen, t_step)
+        if settings['plot']==True:
+            frame = plot_frame(settings, organisms, foods, gen, t_step, video_out)
+            
 
         # UPDATE FITNESS FUNCTION
         for food in foods:
@@ -276,6 +284,8 @@ def evolve(settings, organisms_old, gen):
 #--- Main ---#
 
 def run(settings):
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Escolha o codec apropriado para o formato de vídeo desejado
+    video_out = cv2.VideoWriter('evolution_video.avi', fourcc, 10.0, (960, 540))  # Ajuste a taxa de quadros e o tamanho do quadro conforme necessário
 
     #--- POPULATE THE ENVIRONMENT WITH FOOD ---------------+
     foods = []
@@ -294,12 +304,13 @@ def run(settings):
     for gen in range(0, settings['gens']):
 
         # SIMULATE
-        organisms = simulate(settings, organisms, foods, gen)
+        organisms = simulate(settings, organisms, foods, gen, video_out)
 
         # EVOLVE
         organisms, stats = evolve(settings, organisms, gen)
         print('> GEN:',gen,'BEST:',stats['BEST'],'AVG:',stats['AVG'],'WORST:',stats['WORST'])
-
+    
+    video_out.release()
     pass
 
 
