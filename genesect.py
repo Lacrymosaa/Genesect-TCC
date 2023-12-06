@@ -18,7 +18,7 @@ settings['pop_size'] = 50       # número de organismos
 settings['food_amo'] = 100      # número de particulas de comida
 settings['gens'] = 50         # número de gerações
 settings['elitism'] = 0.20      # elitismo (selection bias)
-settings['mutate'] = 0.10       # taxa de mutação
+settings['mutate'] = 0.05       # taxa de mutação
 
 # Configurações de simulação
 settings['gen_time'] = 20      # tamanho da geração (segundos)
@@ -145,8 +145,8 @@ def plot_frame(settings, organisms, foods, gen, time, video_out):
     frame.axes.get_xaxis().set_ticks([])
     frame.axes.get_yaxis().set_ticks([])
 
-    plt.figtext(0.025, 0.95,r'GENERATION: '+str(gen))
-    plt.figtext(0.025, 0.90,r'T_STEP: '+str(time))
+    plt.figtext(0.025, 0.95,r'GENERATION: '+str(gen + 1))
+    plt.figtext(0.025, 0.90,r'TIME_STEP: '+str(time))
 
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
@@ -308,7 +308,7 @@ def run(settings):
 
         # EVOLVE
         organisms, stats = evolve(settings, organisms, gen)
-        print('> GEN:',gen,'BEST:',stats['BEST'],'AVG:',stats['AVG'],'WORST:',stats['WORST'])
+        print('> GEN:',gen + 1,'BEST:',stats['BEST'],'AVG:',stats['AVG'],'WORST:',stats['WORST'])
     
     video_out.release()
     pass
