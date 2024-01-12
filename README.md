@@ -6,3 +6,6 @@ Gerenciador Evolutivo de Nutrição e Seleção para Evolução de Característi
 
 # O Projeto
 Genesect está sendo desenvolvido a partir de códigos e etapas fornecidas por https://github.com/nathanrooy/evolving-simple-organisms
+
+# O projeto funcionando:
+https://youtu.be/cCRpTOikS10?si=aq4XL90rM6qOkXzZ
